@@ -5,6 +5,7 @@ import edu.univ.erp.auth.store.AuthStore;
 import edu.univ.erp.ui.admin.AdminDashboard;
 import edu.univ.erp.ui.instructor.InstructorDashboard;
 import edu.univ.erp.ui.student.StudentDashboard;
+import edu.univ.erp.ui.components.UIComponents;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
@@ -17,40 +18,75 @@ public class LoginFrame extends JFrame {
 
     public LoginFrame() {
         setTitle("University ERP - Login");
-        setSize(400, 300);
+        setSize(450, 650);
         setResizable(false);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Layout
-        setLayout(new MigLayout("wrap 2", "[right][250]", "[]20[]20[]20[]"));
+        JPanel wrapper = new JPanel(
+            new MigLayout(
+                "fill", 
+                "push[]push", 
+                "push[]push"
+            )
+        );
 
-        // Title
-        JLabel title = new JLabel("ERP Login", SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 22));
-        add(title, "span 2, align center, gapbottom 20");
+        wrapper.setBackground(UIComponents.SIDEBAR_BG);
+        add(wrapper);
 
-        // Username field
-        add(new JLabel("Username:"));
-        usernameField = new JTextField();
-        add(usernameField, "growx");
+        JPanel card = UIComponents.cardPanel();
+        card.setLayout(
+            new MigLayout(
+                "wrap 1", 
+                "[300]", 
+                "20[]20[]10[]10[]20[]10[]"
+            )
+        );
 
-        // Password field
-        add(new JLabel("Password:"));
-        passwordField = new JPasswordField();
-        add(passwordField, "growx");
+        wrapper.add(card);
 
-        // Login button
-        JButton loginButton = new JButton("Login");
-        add(new JLabel());
-        add(loginButton, "growx");
+        card.add(
+            UIComponents.titleLabel("ERP Login", new Color(40, 40, 40)), 
+            "align center, gapbottom 10"
+        );
 
-        // Exit button
-        JButton exitButton = new JButton("Exit");
-        add(new JLabel());
-        add(exitButton, "growx");
+        usernameField = UIComponents.textField();
+        card.add(
+            UIComponents.labeledField(
+                "Username", 
+                usernameField
+            ), 
+            "growx"
+        );
 
-        // Event handlers
+        passwordField = UIComponents.passwordField();
+        card.add(
+            UIComponents.labeledField(
+                "Password", 
+                passwordField
+            ), 
+            "growx"
+        );
+
+        JButton loginButton = UIComponents.primaryButton(
+            "Login", 
+            UIComponents.PRIMARY_BG
+        );
+
+        card.add(
+            loginButton, 
+            "growx, gaptop 15"
+        );
+
+        JButton exitButton = UIComponents.primaryButton(
+            "Exit",
+            UIComponents.SECONDARY_BG
+        );
+        card.add(
+            exitButton, 
+            "growx"
+        );
+
         loginButton.addActionListener(e -> performLogin());
         passwordField.addActionListener(e -> performLogin());// Press Enter
         exitButton.addActionListener(e -> System.exit(0));

@@ -1,10 +1,18 @@
 package edu.univ.erp.ui.admin;
 
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
 import java.util.List;
 import java.util.Map;
 
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JSeparator;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -13,165 +21,252 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.SwingConstants;  // Add this import
 import javax.swing.table.DefaultTableModel;
 import javax.swing.text.AbstractDocument;
+import javax.swing.text.DocumentFilter;
+
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
 
 import edu.univ.erp.api.admin.AdminAPI;
+import edu.univ.erp.ui.components.UIComponents;
 import edu.univ.erp.api.catalog.CatalogAPI;
 import edu.univ.erp.api.common.APIResponse;
 import edu.univ.erp.api.maintenance.MaintenanceAPI;
 import edu.univ.erp.api.types.CourseRow;
-import edu.univ.erp.ui.common.NavigationBar;
+import edu.univ.erp.ui.components.NavigationBar;
+import edu.univ.erp.ui.components.SideBar;
 import net.miginfocom.swing.MigLayout;
 
 public class AdminDashboard extends JFrame {
 
-    private final JTabbedPane tabs = new JTabbedPane();
+    private JPanel mainPanel;
+    private CardLayout cardLayout;
+    
+    private NavigationBar navBar;
+    private SideBar sidebar;
 
-    // Users tab
     private final DefaultTableModel usersModel;
     private final JTable usersTable;
 
-    // Courses tab
     private final DefaultTableModel coursesModel;
     private final JTable coursesTable;
 
-    // Sections tab
     private final DefaultTableModel sectionsModel;
     private final JTable sectionsTable;
 
     public AdminDashboard() {
         setTitle("Admin Dashboard");
-        setSize(900, 700);
+        setSize(1100, 720);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        // Navigation bar
-        NavigationBar navBar = new NavigationBar();
         setLayout(new BorderLayout());
+
+        navBar = new NavigationBar();
         add(navBar, BorderLayout.NORTH);
 
-        // --- Users Tab ---
-        usersModel = new DefaultTableModel(new Object[]{"User ID", "Username", "Role", "Status"}, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c) {
-                return false;
+
+        cardLayout = new CardLayout();
+        mainPanel = new JPanel(cardLayout);
+
+        mainPanel.setBackground(Color.WHITE);;
+        add(mainPanel, BorderLayout.CENTER);
+
+        List<String[]> adminEntries = List.of(
+            new String[]{"users", "🫂  Users"},
+            new String[]{"courses", "📚  Courses"},
+            new String[]{"sections", "🗂️  Sections"}
+        );
+        sidebar = new SideBar(
+            adminEntries,
+            (key, button) -> switchTab(key, button),
+            () -> toggleMaintenance(),
+            true
+        );
+
+        add(sidebar, BorderLayout.WEST);
+
+        usersModel = new DefaultTableModel(
+            new Object[]{
+                "User ID", 
+                "Username", 
+                "Role", 
+                "Status"
+            }, 
+            0 
+        ) {
+            public boolean isCellEditable(int r, int c) { 
+                return false; 
             }
         };
-        usersTable = new JTable(usersModel);
-        usersTable.setAutoCreateRowSorter(true);
-        JScrollPane usersScroll = new JScrollPane(usersTable);
 
-        JButton refreshUsers = new JButton("Refresh Users");
-        JButton addStudentBtn = new JButton("Add Student");
-        JButton addInstructorBtn = new JButton("Add Instructor");
-        JButton addAdminBtn = new JButton("Add Admin");
+        usersTable = UIComponents.table(usersModel);
+
+        JButton refreshUsers = UIComponents.primaryButton(
+            "Refresh Users",
+            UIComponents.PRIMARY_BG
+        );
+        JButton addStudentButton = UIComponents.primaryButton(
+            "Add Student",
+            UIComponents.SECONDARY_BG
+        );
+        JButton addInstructorButton = UIComponents.primaryButton(
+            "Add Instructor",
+            UIComponents.SECONDARY_BG
+        );
+        JButton addAdminButton = UIComponents.primaryButton(
+            "Add Admin",
+            UIComponents.SECONDARY_BG
+        );
 
         JPanel usersPanel = new JPanel(new BorderLayout());
-        JPanel usersTop = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        usersTop.add(refreshUsers);
-        usersTop.add(addStudentBtn);
-        usersTop.add(addInstructorBtn);
-        usersTop.add(addAdminBtn);
-        usersPanel.add(usersTop, BorderLayout.NORTH);
-        usersPanel.add(usersScroll, BorderLayout.CENTER);
 
-        tabs.addTab("Users", usersPanel);
+        usersPanel.add(
+            UIComponents.topActionBar(
+                refreshUsers, 
+                addStudentButton, 
+                addInstructorButton, 
+                addAdminButton
+            ), 
+            BorderLayout.NORTH
+        );
 
-        // --- Courses Tab ---
-        coursesModel = new DefaultTableModel(new Object[]{"Course ID", "Code", "Title", "Credits"}, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c) {
+        usersPanel.add(
+            new JScrollPane(usersTable),
+            BorderLayout.CENTER
+        );
+
+        mainPanel.add(usersPanel, "users");
+
+
+        coursesModel = new DefaultTableModel(
+            new Object[]{
+                "Course ID", 
+                "Code", 
+                "Title", 
+                "Credits"
+            }, 
+            0
+        ) {
+            public boolean isCellEditable(int r, int c) { 
+                return false; 
+            }
+        };
+
+        coursesTable = UIComponents.table(coursesModel);
+        JButton refreshCourses = UIComponents.primaryButton(
+            "Refresh Courses",
+            UIComponents.PRIMARY_BG
+        );
+        JButton addCourseButton = UIComponents.primaryButton(
+            "Add Course",
+            UIComponents.SECONDARY_BG
+        );
+
+        JPanel coursesPanel = new JPanel(
+            new BorderLayout()
+        );
+
+        coursesPanel.add(
+            UIComponents.topActionBar(
+                refreshCourses, 
+                addCourseButton
+            ), 
+            BorderLayout.NORTH
+        );
+
+        coursesPanel.add(
+            new JScrollPane(coursesTable), 
+            BorderLayout.CENTER
+        );
+
+        mainPanel.add(coursesPanel, "courses");
+
+        sectionsModel = new DefaultTableModel(
+            new Object[]{
+                "Section ID",
+                "Course",
+                "Instructor",
+                "Day/Time",
+                "Capacity", 
+                "Enrolled"
+            }, 
+            0 
+        ) {
+            public boolean isCellEditable(int r, int c) { 
                 return false;
             }
         };
-        coursesTable = new JTable(coursesModel);
-        coursesTable.setAutoCreateRowSorter(true);
-        JScrollPane coursesScroll = new JScrollPane(coursesTable);
 
-        JButton refreshCourses = new JButton("Refresh Courses");
-        JButton addCourseBtn = new JButton("Add Course");
+        sectionsTable = UIComponents.table(sectionsModel);
 
-        JPanel coursesPanel = new JPanel(new BorderLayout());
-        JPanel coursesTop = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        coursesTop.add(refreshCourses);
-        coursesTop.add(addCourseBtn);
-        coursesPanel.add(coursesTop, BorderLayout.NORTH);
-        coursesPanel.add(coursesScroll, BorderLayout.CENTER);
-
-        tabs.addTab("Courses", coursesPanel);
-
-        // --- Sections Tab ---
-        sectionsModel = new DefaultTableModel(new Object[]{"Section ID", "Course", "Instructor", "Day/Time", "Capacity", "Enrolled"}, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c) {
-                return false;
-            }
-        };
-        sectionsTable = new JTable(sectionsModel);
-        sectionsTable.setAutoCreateRowSorter(true);
-        JScrollPane sectionsScroll = new JScrollPane(sectionsTable);
-
-        JButton refreshSections = new JButton("Refresh Sections");
-        JButton addSectionBtn = new JButton("Add Section");
+        JButton refreshSections = UIComponents.primaryButton(
+            "Refresh Sections",
+            UIComponents.PRIMARY_BG
+        );
+        JButton addSectionButton = UIComponents.primaryButton(
+            "Add Section",
+            UIComponents.SECONDARY_BG
+        );
 
         JPanel sectionsPanel = new JPanel(new BorderLayout());
-        JPanel sectionsTop = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        sectionsTop.add(refreshSections);
-        sectionsTop.add(addSectionBtn);
-        sectionsPanel.add(sectionsTop, BorderLayout.NORTH);
-        sectionsPanel.add(sectionsScroll, BorderLayout.CENTER);
 
-        tabs.addTab("Sections", sectionsPanel);
+        sectionsPanel.add(
+            UIComponents.topActionBar(
+                refreshSections,
+                addSectionButton
+            ), 
+            BorderLayout.NORTH
+        );
 
-        // --- Maintenance Tab ---
-        JButton toggleMaintenanceBtn = new JButton("Toggle Maintenance Mode");
-        JLabel maintenanceStatusLabel = new JLabel("Current: " + (MaintenanceAPI.isReadOnly() ? "ON" : "OFF"));
+        sectionsPanel.add(
+            new JScrollPane(sectionsTable), 
+            BorderLayout.CENTER
+        );
 
-        JPanel maintenancePanel = new JPanel(new MigLayout("wrap 1", "[center]", "[]20[]"));
-        maintenancePanel.add(new JLabel("Maintenance Mode Control", SwingConstants.CENTER));
-        maintenancePanel.add(toggleMaintenanceBtn);
-        maintenancePanel.add(maintenanceStatusLabel);
+        mainPanel.add(
+            sectionsPanel, 
+            "sections"
+        );
 
-        tabs.addTab("Maintenance", maintenancePanel);
-
-        add(tabs, BorderLayout.CENTER);
-
-        // Events
         refreshUsers.addActionListener(e -> loadUsers());
-        addStudentBtn.addActionListener(e -> showAddStudentDialog());
-        addInstructorBtn.addActionListener(e -> showAddInstructorDialog());
-        addAdminBtn.addActionListener(e -> showAddAdminDialog());
+        addStudentButton.addActionListener(e -> showAddStudentDialog());
+        addInstructorButton.addActionListener(e -> showAddInstructorDialog());
+        addAdminButton.addActionListener(e -> showAddAdminDialog());
 
         refreshCourses.addActionListener(e -> loadCourses());
-        addCourseBtn.addActionListener(e -> showAddCourseDialog());
+        addCourseButton.addActionListener(e -> showAddCourseDialog());
 
         refreshSections.addActionListener(e -> loadSections());
-        addSectionBtn.addActionListener(e -> showAddSectionDialog());
+        addSectionButton.addActionListener(e -> showAddSectionDialog());
 
-        toggleMaintenanceBtn.addActionListener(e -> {
-            boolean current = MaintenanceAPI.isReadOnly();
-            APIResponse<Void> r = AdminAPI.toggleMaintenance(!current);
-            if (r.success) {
-                JOptionPane.showMessageDialog(this, r.message);
-                maintenanceStatusLabel.setText("Current: " + (!current ? "ON" : "OFF"));
-                navBar.updateMaintenanceBanner();
-            } else {
-                JOptionPane.showMessageDialog(this, r.message, "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-
-        // Load initial data
         loadUsers();
         loadCourses();
         loadSections();
+    }
+
+    private void toggleMaintenance() {
+        boolean current = MaintenanceAPI.isReadOnly();
+        APIResponse res = AdminAPI.toggleMaintenance(!current);
+
+        if (res.success) {
+            JOptionPane.showMessageDialog(this, res.message);
+            navBar.updateMaintenanceBanner();
+        } else {
+            JOptionPane.showMessageDialog(
+                this,
+                res.message,
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
+    private void switchTab(String name, JButton button) {
+        cardLayout.show(mainPanel, name);
     }
 
     private void loadUsers() {

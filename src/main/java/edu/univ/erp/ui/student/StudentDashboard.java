@@ -1,152 +1,261 @@
-package edu.univ.erp.ui.student;
+package edu.univ.erp.ui.student; 
 
-import java.awt.BorderLayout;
-import java.awt.Desktop;
-import java.awt.FlowLayout;
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import java.awt.*; 
+import java.awt.Desktop; 
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTable;
-import javax.swing.table.DefaultTableModel;
+import java.io.File; 
+import java.io.IOException; 
 
-import edu.univ.erp.api.common.APIResponse;
-import edu.univ.erp.api.reports.ReportAPI;
-import edu.univ.erp.api.student.StudentAPI;
-import edu.univ.erp.api.types.CourseRow;
-import edu.univ.erp.api.types.SectionRow;
-import edu.univ.erp.auth.session.UserSession;
-import edu.univ.erp.ui.common.NavigationBar;
+import java.util.List; 
+import java.util.Map; 
+
+import javax.swing.*; 
+import javax.swing.border.EmptyBorder; 
+import javax.swing.table.DefaultTableModel; 
+
+import edu.univ.erp.api.common.APIResponse; 
+import edu.univ.erp.api.reports.ReportAPI; 
+import edu.univ.erp.api.student.StudentAPI; 
+import edu.univ.erp.api.types.CourseRow; 
+import edu.univ.erp.api.types.SectionRow; 
+
+import edu.univ.erp.auth.session.UserSession; 
+
+import edu.univ.erp.ui.components.NavigationBar; 
+import edu.univ.erp.ui.components.SideBar; 
+import edu.univ.erp.ui.components.UIComponents;
 
 public class StudentDashboard extends JFrame {
 
-    private final JTabbedPane tabs = new JTabbedPane();
-
-    private final DefaultTableModel catalogModel;
-    private final JTable catalogTable;
-    private final DefaultTableModel sectionModel;
-    private final JTable sectionTable;
-    private final DefaultTableModel enrollModel;
-    private final JTable enrollTable;
-    private final DefaultTableModel timetableModel;
-    private final JTable timetableTable;
-    private final DefaultTableModel gradesModel;
+    private JPanel mainPanel; 
+    private CardLayout cardLayout; 
+    private final DefaultTableModel catalogModel; 
+    private final JTable catalogTable; 
+    private final DefaultTableModel sectionModel; 
+    private final JTable sectionTable; 
+    private final DefaultTableModel enrollModel; 
+    private final JTable enrollTable; 
+    private final DefaultTableModel timetableModel; 
+    private final JTable timetableTable; 
+    private final DefaultTableModel gradesModel; 
     private final JTable gradesTable;
 
     public StudentDashboard() {
-        setTitle("Student Dashboard");
-        setSize(800, 600);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setTitle(
+            "Student Dashboard"
+        );
+        setSize(
+            900,
+            650
+        );
+        setLocationRelativeTo(
+            null
+        );
+        setDefaultCloseOperation(
+            JFrame.EXIT_ON_CLOSE
+        );
+        setLayout(
+            new BorderLayout()
+        );
 
         // Navigation bar
         NavigationBar navBar = new NavigationBar();
+        add(
+            navBar,
+            BorderLayout.NORTH
+        );
+        cardLayout = new CardLayout();
+        mainPanel = new JPanel(
+            cardLayout
+        );
+        
+        add(
+            mainPanel,
+            BorderLayout.CENTER
+        );
 
-        // Use BorderLayout to place navBar at top and tabs in center
-        setLayout(new BorderLayout());
-        add(navBar, BorderLayout.NORTH);
+        // Sidebar
+        List<String[]> entries = List.of(
+            new String[]{"catalog", "📚  Catalog"},
+            new String[]{"sections", "🗂️  Sections"},
+            new String[]{"enrollments", "🗒  My Enrollments"},
+            new String[]{"timetable", "🗓  Timetable"},
+            new String[]{"grades", "🏆  Grades"}
+        );
 
-        // --- Catalog Tab ---
-        catalogModel = new DefaultTableModel(new Object[]{"Course ID","Code","Title","Credits"}, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c){ return false; }
+        SideBar sidebar = new SideBar(
+            entries,
+            (key, btn) -> switchTab(key),
+            null,
+            false
+        );
+        add(
+            sidebar,
+            BorderLayout.WEST
+        );
+
+        // -------- Catalog Panel --------
+        catalogModel = new DefaultTableModel(
+            new Object[]{"Course ID", "Code", "Title", "Credits"},
+            0
+        ) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        catalogTable = new JTable(catalogModel);
-        catalogTable.setAutoCreateRowSorter(true);
-        JScrollPane catalogScroll = new JScrollPane(catalogTable);
+        catalogTable = UIComponents.table(catalogModel);
 
-        JButton refreshCatalog = new JButton("Refresh Catalog");
-        JButton viewSections = new JButton("View Sections for Selected Course");
+        JButton refreshCatalog = UIComponents.primaryButton(
+            "Refresh Catalog",
+            UIComponents.PRIMARY_BG
+        );
+        JButton viewSections = UIComponents.primaryButton(
+            "View Sections",
+            UIComponents.SECONDARY_BG
+        );
 
-        JPanel catalogPanel = new JPanel(new BorderLayout());
-        JPanel catalogTop = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        catalogTop.add(refreshCatalog);
-        catalogTop.add(viewSections);
-        catalogPanel.add(catalogTop, BorderLayout.NORTH);
-        catalogPanel.add(catalogScroll, BorderLayout.CENTER);
+        JPanel catalogPanel = new JPanel(
+            new BorderLayout()
+        );
+        catalogPanel.add(
+            UIComponents.topActionBar(refreshCatalog, viewSections),
+            BorderLayout.NORTH
+        );
+        catalogPanel.add(
+            new JScrollPane(catalogTable),
+            BorderLayout.CENTER
+        );
 
-        tabs.addTab("Catalog", catalogPanel);
+        mainPanel.add(
+            catalogPanel,
+            "catalog"
+        );
 
-        // --- Sections Tab (for selected course) ---
-        sectionModel = new DefaultTableModel(new Object[]{"Section ID","Instructor","Day/Time","Capacity","Enrolled"}, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c){ return false; }
+        // -------- Sections Panel --------
+        sectionModel = new DefaultTableModel(
+            new Object[]{"Section ID", "Instructor", "Day/Time", "Capacity", "Enrolled"},
+            0
+        ) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        sectionTable = new JTable(sectionModel);
-        sectionTable.setAutoCreateRowSorter(true);
-        JScrollPane sectionScroll = new JScrollPane(sectionTable);
-        JButton registerBtn = new JButton("Register Selected Section");
-        JButton backToCatalog = new JButton("Back to Catalog");
+        sectionTable = UIComponents.table(sectionModel);
 
-        JPanel sectionPanel = new JPanel(new BorderLayout());
-        JPanel sectionTop = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        sectionTop.add(backToCatalog);
-        sectionTop.add(registerBtn);
-        sectionPanel.add(sectionTop, BorderLayout.NORTH);
-        sectionPanel.add(sectionScroll, BorderLayout.CENTER);
+        JButton registerBtn = UIComponents.primaryButton(
+            "Register Section",
+            UIComponents.PRIMARY_BG
+        );
+        JButton backToCatalog = UIComponents.primaryButton(
+            "Back",
+            UIComponents.SECONDARY_BG
+        );
 
-        tabs.addTab("Sections", sectionPanel);
+        JPanel sectionPanel = new JPanel(
+            new BorderLayout()
+        );
+        sectionPanel.add(
+            UIComponents.topActionBar(backToCatalog, registerBtn),
+            BorderLayout.NORTH
+        );
+        sectionPanel.add(
+            new JScrollPane(sectionTable),
+            BorderLayout.CENTER
+        );
 
-        // --- Enrollments / Timetable Tab ---
-        enrollModel = new DefaultTableModel(new Object[]{"Enrollment ID","Section ID","Course","Day/Time","Room","Instructor"},0) {
-            @Override
-            public boolean isCellEditable(int r, int c){ return false; }
+        mainPanel.add(
+            sectionPanel,
+            "sections"
+        );
+
+        // -------- Enrollments Panel --------
+        enrollModel = new DefaultTableModel(
+            new Object[]{"Enrollment ID", "Section ID", "Course", "Day/Time", "Room", "Instructor"},
+            0
+        ) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        enrollTable = new JTable(enrollModel);
-        enrollTable.setAutoCreateRowSorter(true);
-        JScrollPane enrollScroll = new JScrollPane(enrollTable);
-        JButton dropBtn = new JButton("Drop Selected Enrollment");
-        JPanel enrollPanel = new JPanel(new BorderLayout());
-        JPanel enrollTop = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        enrollTop.add(dropBtn);
-        enrollPanel.add(enrollTop, BorderLayout.NORTH);
-        enrollPanel.add(enrollScroll, BorderLayout.CENTER);
+        enrollTable = UIComponents.table(enrollModel);
 
-        tabs.addTab("My Enrollments", enrollPanel);
+        JButton dropBtn = UIComponents.primaryButton(
+            "Drop Enrollment",
+            UIComponents.PRIMARY_BG
+        );
 
-        // --- Timetable Tab ---
-        timetableModel = new DefaultTableModel(new Object[]{"Course Code","Day/Time","Room","Instructor"},0) {
-            @Override
-            public boolean isCellEditable(int r, int c){ return false; }
+        JPanel enrollPanel = new JPanel(
+            new BorderLayout()
+        );
+        enrollPanel.add(
+            UIComponents.topActionBar(dropBtn),
+            BorderLayout.NORTH
+        );
+        enrollPanel.add(
+            new JScrollPane(enrollTable),
+            BorderLayout.CENTER
+        );
+
+        mainPanel.add(
+            enrollPanel,
+            "enrollments"
+        );
+
+        // -------- Timetable Panel --------
+        timetableModel = new DefaultTableModel(
+            new Object[]{"Course Code", "Day/Time", "Room", "Instructor"},
+            0
+        ) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        timetableTable = new JTable(timetableModel);
-        timetableTable.setAutoCreateRowSorter(true);
-        JScrollPane timetableScroll = new JScrollPane(timetableTable);
-        JButton refreshTimetableBtn = new JButton("Refresh Timetable");
-        JPanel timetableTop = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        timetableTop.add(refreshTimetableBtn);
-        JPanel timetablePanel = new JPanel(new BorderLayout());
-        timetablePanel.add(timetableTop, BorderLayout.NORTH);
-        timetablePanel.add(timetableScroll, BorderLayout.CENTER);
+        timetableTable = UIComponents.table(timetableModel);
 
-        tabs.addTab("Timetable", timetablePanel);
+        JButton refreshTimetableBtn = UIComponents.primaryButton(
+            "Refresh Timetable",
+            UIComponents.PRIMARY_BG
+        );
 
-        // --- Grades Tab ---
-        gradesModel = new DefaultTableModel(new Object[]{"Course","Component","Score","Final Grade"},0) {
-            @Override
-            public boolean isCellEditable(int r, int c){ return false; }
+        JPanel timetablePanel = new JPanel(
+            new BorderLayout()
+        );
+        timetablePanel.add(
+            UIComponents.topActionBar(refreshTimetableBtn),
+            BorderLayout.NORTH
+        );
+        timetablePanel.add(
+            new JScrollPane(timetableTable),
+            BorderLayout.CENTER
+        );
+
+        mainPanel.add(
+            timetablePanel,
+            "timetable"
+        );
+
+        // -------- Grades Panel --------
+        gradesModel = new DefaultTableModel(
+            new Object[]{"Course", "Component", "Score", "Final Grade"},
+            0
+        ) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        gradesTable = new JTable(gradesModel);
-        gradesTable.setAutoCreateRowSorter(true);
-        JScrollPane gradesScroll = new JScrollPane(gradesTable);
-        JButton downloadTranscriptBtn = new JButton("Download Transcript (PDF)");
-        JPanel gradesTop = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        gradesTop.add(downloadTranscriptBtn);
-        JPanel gradesPanel = new JPanel(new BorderLayout());
-        gradesPanel.add(gradesTop, BorderLayout.NORTH);
-        gradesPanel.add(gradesScroll, BorderLayout.CENTER);
+        gradesTable = UIComponents.table(gradesModel);
 
-        tabs.addTab("Grades", gradesPanel);
+        JButton downloadTranscriptBtn = UIComponents.primaryButton(
+            "Download Transcript (PDF)",
+            UIComponents.PRIMARY_BG
+        );
 
-        // Add tabs to frame center
-        add(tabs, BorderLayout.CENTER);
+        JPanel gradesPanel = new JPanel(
+            new BorderLayout()
+        );
+        gradesPanel.add(
+            UIComponents.topActionBar(downloadTranscriptBtn),
+            BorderLayout.NORTH
+        );
+        gradesPanel.add(
+            new JScrollPane(gradesTable),
+            BorderLayout.CENTER
+        );
+
+        mainPanel.add(
+            gradesPanel,
+            "grades"
+        );
 
         // Events
         refreshCatalog.addActionListener(e -> loadCatalog());
@@ -155,9 +264,9 @@ public class StudentDashboard extends JFrame {
             if (sel == -1) { JOptionPane.showMessageDialog(this, "Select a course first"); return; }
             int courseId = (int) catalogModel.getValueAt(sel, 0);
             loadSections(courseId);
-            tabs.setSelectedIndex(1);
+            switchTab("sections");
         });
-        backToCatalog.addActionListener(e -> tabs.setSelectedIndex(0));
+        backToCatalog.addActionListener(e -> switchTab("catalog"));
         refreshTimetableBtn.addActionListener(e -> loadTimetable());
         registerBtn.addActionListener(e -> {
             int sel = sectionTable.getSelectedRow();
@@ -224,6 +333,10 @@ public class StudentDashboard extends JFrame {
         loadEnrollments();
         loadTimetable();
         loadGrades();
+    }
+
+    private void switchTab(String key) { 
+        cardLayout.show(mainPanel, key); 
     }
 
     private void loadCatalog() {

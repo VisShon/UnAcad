@@ -1,66 +1,77 @@
 package edu.univ.erp.ui.instructor;
 
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
-import javax.swing.JButton;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.table.DefaultTableModel;
 
 import edu.univ.erp.api.common.APIResponse;
 import edu.univ.erp.api.instructor.InstructorAPI;
-import edu.univ.erp.ui.common.NavigationBar;
+import edu.univ.erp.ui.components.NavigationBar;
+import edu.univ.erp.ui.components.SideBar;
+import edu.univ.erp.ui.components.UIComponents;
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Map;
 
 public class InstructorDashboard extends JFrame {
+
+    private JPanel mainPanel;
+    private CardLayout cardLayout;
+    private NavigationBar navBar;
+    private SideBar sidebar;
 
     private final DefaultTableModel sectionsModel;
     private final JTable sectionsTable;
 
     public InstructorDashboard() {
         setTitle("Instructor Dashboard");
-        setSize(800, 600);
+        setSize(900, 650);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        // Add NavigationBar (includes logout)
-        NavigationBar navBar = new NavigationBar();
-
-        sectionsModel = new DefaultTableModel(new Object[]{"Section ID", "Course", "Enrolled"}, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c) { return false; }
-        };
-        sectionsTable = new JTable(sectionsModel);
-        sectionsTable.setAutoCreateRowSorter(true);
-        JScrollPane scroll = new JScrollPane(sectionsTable);
-
-        JButton refreshBtn = new JButton("Refresh Sections");
-        JButton enterGradesBtn = new JButton("Enter Grades for Selected");
-        JButton exportCsvBtn = new JButton("Export Grades CSV");
-
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        topPanel.add(refreshBtn);
-        topPanel.add(enterGradesBtn);
-        topPanel.add(exportCsvBtn);
-
-        // Layout: NavigationBar at top, content below
         setLayout(new BorderLayout());
+
+        navBar = new NavigationBar();
         add(navBar, BorderLayout.NORTH);
 
-        JPanel contentPanel = new JPanel(new BorderLayout());
-        contentPanel.add(topPanel, BorderLayout.NORTH);
-        contentPanel.add(scroll, BorderLayout.CENTER);
-        add(contentPanel, BorderLayout.CENTER);
+        cardLayout = new CardLayout();
+        mainPanel = new JPanel(cardLayout);
+        mainPanel.setBackground(Color.WHITE);
+        add(mainPanel, BorderLayout.CENTER);
+
+        // Sidebar
+        List<String[]> entries = new ArrayList<>();
+        entries.add(new String[]{"sections", "🗂️  Sections"});
+
+        sidebar = new SideBar(
+                entries,
+                (key, btn) -> switchTab(key),
+                null,
+                false
+        );
+        add(sidebar, BorderLayout.WEST);
+
+        sectionsModel = new DefaultTableModel(
+                new Object[]{"Section ID", "Course", "Enrolled"},
+                0
+        ) {
+            @Override public boolean isCellEditable(int row, int col) { return false; }
+        };
+        sectionsTable = UIComponents.table(sectionsModel);
+
+        JButton refreshBtn = UIComponents.primaryButton("Refresh Sections", UIComponents.PRIMARY_BG);
+        JButton enterGradesBtn = UIComponents.primaryButton("Enter Grades", UIComponents.SECONDARY_BG);
+        JButton exportCsvBtn = UIComponents.primaryButton("Export Grades", UIComponents.SECONDARY_BG);
+
+        JPanel sectionsPanel = new JPanel(new BorderLayout());
+        sectionsPanel.add(UIComponents.topActionBar(refreshBtn, enterGradesBtn), BorderLayout.NORTH);
+        sectionsPanel.add(new JScrollPane(sectionsTable), BorderLayout.CENTER);
+
+        mainPanel.add(sectionsPanel, "sections");
 
         refreshBtn.addActionListener(e -> loadSections());
         enterGradesBtn.addActionListener(e -> {
@@ -105,6 +116,10 @@ public class InstructorDashboard extends JFrame {
         });
 
         loadSections();
+    }
+
+    private void switchTab(String key) { 
+        cardLayout.show(mainPanel, key); 
     }
 
     private int getSelectedSectionId() {

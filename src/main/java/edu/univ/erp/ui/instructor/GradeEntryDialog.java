@@ -23,6 +23,7 @@ import edu.univ.erp.api.common.APIResponse;
 import edu.univ.erp.api.instructor.InstructorAPI;
 import edu.univ.erp.data.EnrollmentDAO;
 import edu.univ.erp.data.GradesDAO;
+import edu.univ.erp.ui.components.UIComponents;
 import net.miginfocom.swing.MigLayout;
 
 public class GradeEntryDialog extends JDialog {
@@ -42,49 +43,50 @@ public class GradeEntryDialog extends JDialog {
 
         setSize(900, 600);
         setLocationRelativeTo(parent);
+        setLayout(new BorderLayout(12, 12));
 
-        // Students table
-        studentsModel = new DefaultTableModel(new Object[]{"Enrollment ID", "Student", "Quiz", "Midterm", "Final", "Final Grade"}, 0) {
+        studentsModel = new DefaultTableModel(
+            new Object[]{"Enrollment ID", "Student", "Quiz", "Midterm", "Final", "Final Grade"},
+            0
+        ) {
             @Override
             public boolean isCellEditable(int r, int c) {
-                return c >= 2 && c <= 4; // Only score columns are editable
+                return c >= 2 && c <= 4;   // Only score columns
             }
         };
+
         studentsTable = new JTable(studentsModel);
         studentsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         studentsTable.setAutoCreateRowSorter(true);
         JScrollPane studentsScroll = new JScrollPane(studentsTable);
-
-        // Weight configuration panel
-        JPanel weightPanel = new JPanel(new MigLayout("wrap 2", "[][100]", "[]5[]5[]"));
-        weightPanel.setBorder(BorderFactory.createTitledBorder("Grade Weights (must sum to 100%)"));
         
-        weightPanel.add(new JLabel("Quiz Weight (%):"));
-        quizWeightField = new JTextField("20", 10);
-        weightPanel.add(quizWeightField);
-        
-        weightPanel.add(new JLabel("Midterm Weight (%):"));
-        midtermWeightField = new JTextField("30", 10);
-        weightPanel.add(midtermWeightField);
-        
-        weightPanel.add(new JLabel("Final Weight (%):"));
-        finalWeightField = new JTextField("50", 10);
-        weightPanel.add(finalWeightField);
+        quizWeightField     = UIComponents.weightField("20");
+        midtermWeightField  = UIComponents.weightField("30");
+        finalWeightField    = UIComponents.weightField("50");
 
-        // Buttons
-        JButton saveBtn = new JButton("Save Scores");
-        JButton computeFinalBtn = new JButton("Compute Final Grades");
-        JButton viewStatsBtn = new JButton("View Class Statistics");
-        JButton closeBtn = new JButton("Close");
+        JPanel weightPanel = UIComponents.grid(
+            3,
+            UIComponents.labelled("Quiz (%)", quizWeightField),
+            UIComponents.labelled("Midterm (%)", midtermWeightField),
+            UIComponents.labelled("Final (%)", finalWeightField)
+        );
 
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(saveBtn);
-        buttonPanel.add(computeFinalBtn);
-        buttonPanel.add(viewStatsBtn);
-        buttonPanel.add(closeBtn);
+        weightPanel.setBorder(
+            BorderFactory.createTitledBorder("Grade Weights (must sum to 100%)")
+        );
 
-        // Layout
-        setLayout(new BorderLayout());
+        JButton saveBtn          = new JButton("Save Scores");
+        JButton computeFinalBtn  = new JButton("Compute Final Grades");
+        JButton viewStatsBtn     = new JButton("View Class Statistics");
+        JButton closeBtn         = new JButton("Close");
+
+        JPanel buttonPanel = UIComponents.buttonBar(
+            saveBtn,
+            computeFinalBtn,
+            viewStatsBtn,
+            closeBtn
+        );
+
         add(weightPanel, BorderLayout.NORTH);
         add(studentsScroll, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
