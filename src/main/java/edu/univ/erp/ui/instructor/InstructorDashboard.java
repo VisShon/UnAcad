@@ -9,6 +9,7 @@ import edu.univ.erp.api.instructor.InstructorAPI;
 import edu.univ.erp.ui.components.NavigationBar;
 import edu.univ.erp.ui.components.SideBar;
 import edu.univ.erp.ui.components.UIComponents;
+import edu.univ.erp.util.SearchFilter;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -43,7 +44,6 @@ public class InstructorDashboard extends JFrame {
         mainPanel.setBackground(Color.WHITE);
         add(mainPanel, BorderLayout.CENTER);
 
-        // Sidebar
         List<String[]> entries = new ArrayList<>();
         entries.add(new String[]{"sections", "🗂️  Sections"});
 
@@ -68,11 +68,27 @@ public class InstructorDashboard extends JFrame {
         JButton exportCsvBtn = UIComponents.primaryButton("Export Grades", UIComponents.SECONDARY_BG);
 
         JPanel sectionsPanel = new JPanel(new BorderLayout());
-        sectionsPanel.add(UIComponents.topActionBar(refreshBtn, enterGradesBtn), BorderLayout.NORTH);
+        JPanel sectionsTopBar = new JPanel(new BorderLayout());
+        sectionsTopBar.setBackground(Color.WHITE);
+
+        JPanel leftButtons = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        leftButtons.setBackground(Color.WHITE);
+        leftButtons.add(refreshBtn);
+        leftButtons.add(enterGradesBtn);
+        leftButtons.add(exportCsvBtn);
+
+        sectionsTopBar.add(leftButtons, BorderLayout.WEST);
+
+        JTextField sectionsSearchField = UIComponents.searchField();
+        sectionsTopBar.add(sectionsSearchField, BorderLayout.EAST);
+
+        sectionsPanel.add(sectionsTopBar, BorderLayout.NORTH);
         sectionsPanel.add(new JScrollPane(sectionsTable), BorderLayout.CENTER);
 
         mainPanel.add(sectionsPanel, "sections");
 
+    // Events
+        SearchFilter.attachSearchFilter(sectionsSearchField, sectionsTable, sectionsModel);
         refreshBtn.addActionListener(e -> loadSections());
         enterGradesBtn.addActionListener(e -> {
             int sectionId = getSelectedSectionId();
@@ -81,7 +97,6 @@ public class InstructorDashboard extends JFrame {
             new GradeEntryDialog(this, sectionId, courseInfo).setVisible(true);
         });
 
-        // Add action listener for CSV export
         exportCsvBtn.addActionListener(e -> {
             int sectionId = getSelectedSectionId();
             if (sectionId == -1) return;

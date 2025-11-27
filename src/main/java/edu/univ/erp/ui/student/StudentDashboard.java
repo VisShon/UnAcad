@@ -12,6 +12,7 @@ import java.util.Map;
 import javax.swing.*; 
 import javax.swing.border.EmptyBorder; 
 import javax.swing.table.DefaultTableModel; 
+import javax.swing.table.TableRowSorter;
 
 import edu.univ.erp.api.common.APIResponse; 
 import edu.univ.erp.api.reports.ReportAPI; 
@@ -24,6 +25,7 @@ import edu.univ.erp.auth.session.UserSession;
 import edu.univ.erp.ui.components.NavigationBar; 
 import edu.univ.erp.ui.components.SideBar; 
 import edu.univ.erp.ui.components.UIComponents;
+import edu.univ.erp.util.SearchFilter;
 
 public class StudentDashboard extends JFrame {
 
@@ -103,6 +105,8 @@ public class StudentDashboard extends JFrame {
         };
         catalogTable = UIComponents.table(catalogModel);
 
+        JPanel catalogTopBar = new JPanel(new BorderLayout());
+
         JButton refreshCatalog = UIComponents.primaryButton(
             "Refresh Catalog",
             UIComponents.PRIMARY_BG
@@ -112,13 +116,22 @@ public class StudentDashboard extends JFrame {
             UIComponents.SECONDARY_BG
         );
 
+        JPanel catalogButtons = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        catalogButtons.setBackground(Color.WHITE);
+        catalogButtons.add(refreshCatalog);
+        catalogButtons.add(viewSections);
+
+        catalogTopBar.add(catalogButtons, BorderLayout.WEST);
+        catalogTopBar.setBackground(Color.WHITE);
+
+        JTextField catalogSearchField = UIComponents.searchField();
+        catalogTopBar.add(catalogSearchField, BorderLayout.EAST);
+
         JPanel catalogPanel = new JPanel(
             new BorderLayout()
         );
-        catalogPanel.add(
-            UIComponents.topActionBar(refreshCatalog, viewSections),
-            BorderLayout.NORTH
-        );
+
+        catalogPanel.add(catalogTopBar, BorderLayout.NORTH);
         catalogPanel.add(
             new JScrollPane(catalogTable),
             BorderLayout.CENTER
@@ -137,6 +150,7 @@ public class StudentDashboard extends JFrame {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
         sectionTable = UIComponents.table(sectionModel);
+        JPanel sectionTopBar = new JPanel(new BorderLayout());
 
         JButton registerBtn = UIComponents.primaryButton(
             "Register Section",
@@ -147,11 +161,22 @@ public class StudentDashboard extends JFrame {
             UIComponents.SECONDARY_BG
         );
 
+        JPanel sectionButtons = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        sectionButtons.setBackground(Color.WHITE);
+        sectionButtons.add(registerBtn);
+        sectionButtons.add(backToCatalog);
+
+        sectionTopBar.add(sectionButtons, BorderLayout.WEST);
+        sectionTopBar.setBackground(Color.WHITE);
+
+        JTextField sectionSearchField = UIComponents.searchField();
+        sectionTopBar.add(sectionSearchField, BorderLayout.EAST);
+
         JPanel sectionPanel = new JPanel(
             new BorderLayout()
         );
         sectionPanel.add(
-            UIComponents.topActionBar(backToCatalog, registerBtn),
+            sectionTopBar,
             BorderLayout.NORTH
         );
         sectionPanel.add(
@@ -258,6 +283,9 @@ public class StudentDashboard extends JFrame {
         );
 
         // Events
+        SearchFilter.attachSearchFilter(catalogSearchField, catalogTable, catalogModel);
+        SearchFilter.attachSearchFilter(sectionSearchField, sectionTable, sectionModel);
+
         refreshCatalog.addActionListener(e -> loadCatalog());
         viewSections.addActionListener(e -> {
             int sel = catalogTable.getSelectedRow();

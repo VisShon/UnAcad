@@ -8,6 +8,7 @@ import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FlowLayout;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -39,6 +40,7 @@ import edu.univ.erp.api.maintenance.MaintenanceAPI;
 import edu.univ.erp.api.types.CourseRow;
 import edu.univ.erp.ui.components.NavigationBar;
 import edu.univ.erp.ui.components.SideBar;
+import edu.univ.erp.util.SearchFilter;
 import net.miginfocom.swing.MigLayout;
 
 public class AdminDashboard extends JFrame {
@@ -48,6 +50,7 @@ public class AdminDashboard extends JFrame {
     
     private NavigationBar navBar;
     private SideBar sidebar;
+
 
     private final DefaultTableModel usersModel;
     private final JTable usersTable;
@@ -123,16 +126,22 @@ public class AdminDashboard extends JFrame {
         );
 
         JPanel usersPanel = new JPanel(new BorderLayout());
+        JPanel usersTopBar = new JPanel(new BorderLayout());
+        usersTopBar.setBackground(Color.WHITE);
 
-        usersPanel.add(
-            UIComponents.topActionBar(
-                refreshUsers, 
-                addStudentButton, 
-                addInstructorButton, 
-                addAdminButton
-            ), 
-            BorderLayout.NORTH
-        );
+        JPanel usersButtons = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        usersButtons.setBackground(Color.WHITE);
+        usersButtons.add(refreshUsers);
+        usersButtons.add(addStudentButton);
+        usersButtons.add(addInstructorButton);
+        usersButtons.add(addAdminButton);
+
+        usersTopBar.add(usersButtons, BorderLayout.WEST);
+
+        JTextField usersSearchField = UIComponents.searchField();
+        usersTopBar.add(usersSearchField, BorderLayout.EAST);
+
+        usersPanel.add(usersTopBar, BorderLayout.NORTH);
 
         usersPanel.add(
             new JScrollPane(usersTable),
@@ -140,7 +149,6 @@ public class AdminDashboard extends JFrame {
         );
 
         mainPanel.add(usersPanel, "users");
-
 
         coursesModel = new DefaultTableModel(
             new Object[]{
@@ -170,13 +178,20 @@ public class AdminDashboard extends JFrame {
             new BorderLayout()
         );
 
-        coursesPanel.add(
-            UIComponents.topActionBar(
-                refreshCourses, 
-                addCourseButton
-            ), 
-            BorderLayout.NORTH
-        );
+        JPanel coursesTopBar = new JPanel(new BorderLayout());
+        coursesTopBar.setBackground(Color.WHITE);
+
+        JPanel coursesButtons = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        coursesButtons.setBackground(Color.WHITE);
+        coursesButtons.add(refreshCourses);
+        coursesButtons.add(addCourseButton);
+
+        coursesTopBar.add(coursesButtons, BorderLayout.WEST);
+
+        JTextField coursesSearchField = UIComponents.searchField();
+        coursesTopBar.add(coursesSearchField, BorderLayout.EAST);
+
+        coursesPanel.add(coursesTopBar, BorderLayout.NORTH);
 
         coursesPanel.add(
             new JScrollPane(coursesTable), 
@@ -213,14 +228,20 @@ public class AdminDashboard extends JFrame {
         );
 
         JPanel sectionsPanel = new JPanel(new BorderLayout());
+        JPanel sectionsTopBar = new JPanel(new BorderLayout());
+        sectionsTopBar.setBackground(Color.WHITE);
 
-        sectionsPanel.add(
-            UIComponents.topActionBar(
-                refreshSections,
-                addSectionButton
-            ), 
-            BorderLayout.NORTH
-        );
+        JPanel sectionsButtons = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        sectionsButtons.setBackground(Color.WHITE);
+        sectionsButtons.add(refreshSections);
+        sectionsButtons.add(addSectionButton);
+
+        sectionsTopBar.add(sectionsButtons, BorderLayout.WEST);
+
+        JTextField sectionsSearchField = UIComponents.searchField();
+        sectionsTopBar.add(sectionsSearchField, BorderLayout.EAST);
+
+        sectionsPanel.add(sectionsTopBar, BorderLayout.NORTH);
 
         sectionsPanel.add(
             new JScrollPane(sectionsTable), 
@@ -231,6 +252,10 @@ public class AdminDashboard extends JFrame {
             sectionsPanel, 
             "sections"
         );
+
+        SearchFilter.attachSearchFilter(usersSearchField, usersTable, usersModel);
+        SearchFilter.attachSearchFilter(coursesSearchField, coursesTable, coursesModel);
+        SearchFilter.attachSearchFilter(sectionsSearchField, sectionsTable, sectionsModel);
 
         refreshUsers.addActionListener(e -> loadUsers());
         addStudentButton.addActionListener(e -> showAddStudentDialog());
@@ -247,6 +272,7 @@ public class AdminDashboard extends JFrame {
         loadCourses();
         loadSections();
     }
+
 
     private void toggleMaintenance() {
         boolean current = MaintenanceAPI.isReadOnly();

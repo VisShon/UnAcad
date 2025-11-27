@@ -229,6 +229,31 @@ public class UIComponents {
         return field;
     }
 
+    public static JTextField searchField() {
+        JTextField field = new JTextField();
+        field.setPreferredSize(new Dimension(260, 28));
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        field.setBackground(Color.WHITE);
+
+        field.setBorder(
+            BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(230, 230, 230)),
+                BorderFactory.createEmptyBorder(6, 10, 6, 10)
+            )
+        );
+
+        field.setLayout(new BorderLayout());
+        JLabel icon = new JLabel("🔍");
+        icon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
+        icon.setForeground(UIComponents.SIDEBAR_INACTIVE_FG);
+
+        field.add(icon, BorderLayout.EAST);
+
+        field.putClientProperty("JTextField.placeholderText", "Search...");
+
+        return field;
+    }
+
     // ----------------- labels-----------------
     public static JLabel maintenanceLabel() {
         JLabel label = new JLabel();
